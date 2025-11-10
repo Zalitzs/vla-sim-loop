@@ -23,40 +23,38 @@ class GridBulletWorld(BulletWorld):
 
     def get_target_grid_pos(self):
         return self.discretize(self.get_target_pos())
+    
     def reset(self, maze_template=None, seed=None):
-        """Reset environment with optional maze template
-        
-        Args:
-            maze_template: Dict with 'grid', 'start_pos', 'target_pos'
-                        If None, generates random maze
-            seed: Random seed for reproducibility
-            
-        Returns:
-            obs: Observation dictionary
-        """
+        """Reset environment with optional maze template"""
         if seed is not None:
             np.random.seed(seed)
         
-        # Call parent reset
-        obs = super().reset()
         self.step_count = 0
         
         if maze_template is not None:
-            # Use provided template - OVERRIDE the random positions
+            # Connect to PyBullet if needed
+            if self._client is None:
+                self.connect()
+            
+            # DON'T call super().reset() - set positions directly
+            self._step_count = 0
+            
+            # Use template
             self.grid = maze_template['grid'].copy()
             
-            # Set cube and target to template positions
+            # Set positions from template
             self._set_cube_to_grid_pos(maze_template['start_pos'])
             self._set_target_to_grid_pos(maze_template['target_pos'])
             
             # Spawn walls
             self._spawn_walls_from_grid()
             
-            # Get NEW observation after setting positions
-            obs = self._obs() 
+            # Get observation
+            obs = self._obs()
             
         else:
             # Original random generation
+            obs = super().reset()
             self.grid[:] = 0
             
             num_walls = np.random.randint(5, 10)
@@ -64,16 +62,14 @@ class GridBulletWorld(BulletWorld):
                 x, y = np.random.randint(0, self.grid_size, size=2)
                 self.grid[x, y] = 1
             
-            # Ensure cube and target don't overlap walls
             cx, cy = self.discretize(self.get_cube_pos())
             tx, ty = self.discretize(self.get_target_pos())
             self.grid[cx, cy] = 0
             self.grid[tx, ty] = 0
             
-            # Spawn walls in PyBullet
             self._spawn_walls_from_grid()
         
-        return self._obs()
+        return obs
     
     def _set_cube_to_grid_pos(self, grid_pos):
         """Move cube to specific grid position
@@ -84,8 +80,7 @@ class GridBulletWorld(BulletWorld):
         grid_cell_size = (2 * self.bounds) / self.grid_size
         bullet_x = (grid_pos[0] * grid_cell_size) - self.bounds + (grid_cell_size / 2)
         bullet_y = (grid_pos[1] * grid_cell_size) - self.bounds + (grid_cell_size / 2)
-        
-        import pybullet as p
+
         p.resetBasePositionAndOrientation(
             self._cube, 
             [bullet_x, bullet_y, 0.025], 
@@ -206,9 +201,19 @@ class GridBulletWorld(BulletWorld):
         self.step_count += 1
         self.apply_dynamic_rules()
         obs = self._obs()
-        done = (obs["dist"] <= self.success_thresh) or (self.step_count >= self.max_steps)
         reward = -obs["dist"]
-        info = {"success": obs["dist"] <= self.success_thresh}
+        
+        # GRID-BASED SUCCESS CHECK (override parent's distance check)
+        cube_grid = self.get_cube_grid_pos()
+        target_grid = self.get_target_grid_pos()
+        
+        if cube_grid == target_grid:
+            done = True
+            info = {"success": True}
+        else:
+            done = self.step_count >= self.max_steps
+            info = {"success": False}
+
         return obs, reward, done, info
 
     def apply_dynamic_rules(self):

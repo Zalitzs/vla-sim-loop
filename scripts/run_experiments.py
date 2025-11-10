@@ -37,7 +37,7 @@ class ExperimentRunner:
         Returns:
             dict: Episode results with metrics
         """
-        obs = env.reset()
+        obs = env._obs()
         steps = 0
         total_reward = 0
         path = [env.get_cube_grid_pos()]
@@ -59,7 +59,10 @@ class ExperimentRunner:
             
             # Take step in environment
             obs, reward, done, info = env.step(action)
-            
+            # After env.step(action) in run_episode
+            if env.gui:
+                import time
+                time.sleep(.5)  # Pause half a second between steps
             # Track metrics
             steps += 1
             total_reward += reward
@@ -116,19 +119,10 @@ class ExperimentRunner:
             if maze_template:
                 env = GridBulletWorld(gui=False, grid_size=maze_template['grid_size'], **maze_config)
                 env.reset(maze_template=maze_template)
-                
-                # DEBUG: Print what actually got set
-                cube_actual = env.get_cube_grid_pos()
-                target_actual = env.get_target_grid_pos()
-                print(f"  DEBUG Trial {trial+1}: Expected start={maze_template['start_pos']}, target={maze_template['target_pos']}")
-                print(f"  DEBUG Trial {trial+1}: Actual   cube={cube_actual}, target={target_actual}")
-                print(f"  DEBUG Trial {trial+1}: Match? cube={cube_actual == maze_template['start_pos']}, target={target_actual == maze_template['target_pos']}")
+
             else:
                 env = GridBulletWorld(gui=False, grid_size=20, **maze_config)
                 env.reset()
-            
-            print(f"  DEBUG: Number of walls in grid: {np.sum(env.grid == 1)}")
-            print(f"  DEBUG: Wall positions: {np.argwhere(env.grid == 1).tolist()[:10]}")  # First 10 walls
    
             agent = agent_class()
             
@@ -140,7 +134,7 @@ class ExperimentRunner:
             result['trial'] = trial
             result['timestamp'] = datetime.now().isoformat()
             if maze_template:
-                result['maze_name'] = maze_name  # Store maze name
+                result['maze_name'] = agent_name.split('-')[1]  # Store maze name
             
             trial_results.append(result)
             
@@ -236,8 +230,7 @@ class ExperimentRunner:
         
         print(comparison)
         print(f"\n{'='*60}\n")
-    
-    
+
 if __name__ == "__main__":
     # Get absolute path to logs folder
     script_dir = os.path.dirname(os.path.abspath(__file__))

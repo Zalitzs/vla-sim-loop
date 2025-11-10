@@ -101,7 +101,7 @@ class LLMAgent:
         self.action_failed = False
         
         print(f"✓ LLM Agent initialized with model: {model}")
-    
+        
     def get_action(self, env, verbose=False):
         """Get the next action from the LLM"""
         # Get information from environment
@@ -109,11 +109,11 @@ class LLMAgent:
         cube_pos = env.get_cube_grid_pos()
         target_pos = env.get_target_grid_pos()
         
-        # EDGE CASE: Already at goal - just stay put
+        # EDGE CASE: Already at goal
         if cube_pos == target_pos:
-            return 'forward'  # Doesn't matter, episode should end
+            return 'forward'
         
-        # Check if last action failed (hit a wall)
+        # Check if last action failed
         if self.last_pos is not None:
             if cube_pos == self.last_pos:
                 self.action_failed = True
@@ -126,6 +126,14 @@ class LLMAgent:
         # Convert flipped grid to text representation
         grid_text = grid_to_text(grid_flipped)
         
+        # DEBUG: Print what we're sending to LLM
+        print(f"\n=== DEBUG: What LLM Sees ===")
+        print(f"Cube grid pos: {cube_pos}")
+        print(f"Target grid pos: {target_pos}")
+        print(f"\nGrid (after flip):")
+        print(grid_text)
+        print(f"=== End Debug ===\n")
+        
         # Create the prompt
         prompt = self._create_prompt(grid_text, cube_pos, target_pos)
         
@@ -133,20 +141,27 @@ class LLMAgent:
         if prompt is None:
             return 'forward'
         
+        # DEBUG: Print full prompt
+        if verbose:
+            print(f"\n=== FULL PROMPT ===")
+            print(prompt)
+            print(f"=== END PROMPT ===\n")
+        
         # Call the LLM
         response = self._call_llm(prompt)
         
-        # Print reasoning if verbose
-        if verbose:
-            print(f"\n--- LLM Reasoning ---")
-            print(response)
-            print(f"--- End Reasoning ---\n")
+        # Print reasoning
+        print(f"\n--- LLM Reasoning ---")
+        print(response)
+        print(f"--- End Reasoning ---\n")
         
         # Parse the response to extract an action
         llm_action = self._parse_action(response)
         
-        # Remap the action from LLM's perspective to actual physics
+        # Remap the action
         actual_action = self._remap_action(llm_action)
+        
+        print(f"LLM said: '{llm_action}' → Remapped to: '{actual_action}'")
         
         # Remember this action and position for next time
         self.last_action = llm_action
