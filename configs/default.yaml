@@ -1,0 +1,19 @@
+# Default experiment configuration
+env:
+  gui: false            # set true to see the simulator window
+  step_size: 0.10       # meters per action
+  success_thresh: 0.05  # meters
+  max_steps: 20
+  bounds: 0.8           # +/- bounds in x,y
+  min_start_dist: 0.30  # ensure non-trivial start
+
+experiment:
+  episodes: 100         # number of episodes per agent
+  difficulty: medium   # easy|medium; medium starts farther
+  rounded_feedback: false  # if true, round coords to 1 decimal
+  action_jitter: 0.0    # e.g., 0.1 adds +/-10% noise to deltas
+  rounded_feedback: true
+
+agents:
+  - random
+  - heuristic
