@@ -11,73 +11,58 @@ load_dotenv()
 def grid_to_text(grid):
     """Convert numpy grid array to text representation for LLM
     
-    This function takes the numeric grid and converts it to symbols
-    that are easier for an LLM to understand visually.
+    This creates a visual representation where:
+    - Top of display = Higher X values (North/Forward)
+    - Bottom of display = Lower X values (South/Backward)
+    - Left of display = Lower Y values (West)
+    - Right of display = Higher Y values (East)
+    
+    The LLM will use natural directions (up/down/left/right) based on
+    what it SEES in this visual representation.
     
     Args:
         grid: numpy array where:
               0 = empty space
               1 = wall  
-              2 = cube (player position)
-              3 = target (goal position)
+              2 = cube (you are here)
+              3 = target (goal)
     
     Returns:
-        str: Text representation with symbols:
-             . = empty
-             # = wall
-             C = cube
-             T = target
-    
-    Example:
-        Input grid (numpy array):
-        [[0, 1, 0],
-         [2, 0, 3]]
-        
-        Output (string):
-        ". # .\nC . T"
-        
-        Which displays as:
-        . # .
-        C . T
+        str: Visual text grid
     """
-    # Step 1: Define our symbol mapping
-    # This dictionary maps each number to a symbol
+    # Step 1: Define symbols
     symbols = {
         0: '.',  # empty space
         1: '#',  # wall
-        2: 'C',  # cube (player)
+        2: 'C',  # cube (you)
         3: 'T'   # target (goal)
     }
     
-    # Step 2: Convert the grid row by row
-    rows = []  # We'll store each row as text here
+    # Step 2: Flip vertically so high X is at top
+    # This makes the visual match intuition:
+    # - "up" in the visual = forward in environment (increasing X)
+    # - "down" in the visual = backward in environment (decreasing X)
+    grid_flipped = np.flipud(grid)
     
-    # Loop through each row in the grid
-    for row in grid:
-        # Step 2a: Convert each number in the row to its symbol
-        # Example: [0, 1, 2] becomes ['.', '#', 'C']
+    # Step 3: Convert to text row by row
+    rows = []
+    for row in grid_flipped:
         row_symbols = [symbols[cell] for cell in row]
-        
-        # Step 2b: Join the symbols with spaces for readability
-        # Example: ['.', '#', 'C'] becomes ". # C"
         row_text = ' '.join(row_symbols)
-        
-        # Step 2c: Add this row to our list
         rows.append(row_text)
     
-    # Step 3: Join all rows with newlines to create the final grid
-    # Example: [". # C", "T . ."] becomes ". # C\nT . ."
     return '\n'.join(rows)
 
+
 class LLMAgent:
-    """An agent that uses an LLM (GPT) to decide actions in the maze"""
+    """An agent that uses an LLM (GPT) to navigate by looking at the grid visually"""
     
-    def __init__(self, model="gpt-4o-mini", temperature=0.0):
+    def __init__(self, model="gpt-5-mini", temperature=0.0):
         """Initialize the LLM agent
         
         Args:
             model: Which OpenAI model to use
-            temperature: How creative/random the LLM should be (0.0 = deterministic)
+            temperature: How creative/random (0.0 = deterministic)
         """
         # Get API key from environment
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -86,8 +71,6 @@ class LLMAgent:
         
         # Initialize OpenAI client
         self.client = OpenAI(api_key=api_key)
-        
-        # Store settings
         self.model = model
         self.temperature = temperature
         
@@ -95,7 +78,7 @@ class LLMAgent:
         self.num_calls = 0
         self.total_tokens = 0
         
-        # NEW: Track last action for feedback
+        # Track last action for feedback
         self.last_action = None
         self.last_pos = None
         self.action_failed = False
@@ -103,120 +86,127 @@ class LLMAgent:
         print(f"✓ LLM Agent initialized with model: {model}")
         
     def get_action(self, env, verbose=False):
-        """Get the next action from the LLM"""
-        # Get information from environment
+        """Get the next action from the LLM based on visual grid"""
+        # Get current state
         grid = env.get_grid_state()
         cube_pos = env.get_cube_grid_pos()
         target_pos = env.get_target_grid_pos()
         
-        # EDGE CASE: Already at goal
+        # Check if already at goal
         if cube_pos == target_pos:
             return 'forward'
         
-        # Check if last action failed
+        # Check if last action failed (hit wall)
         if self.last_pos is not None:
             if cube_pos == self.last_pos:
                 self.action_failed = True
             else:
                 self.action_failed = False
         
-        # Flip grid to match visual orientation
-        grid_flipped = np.flipud(grid)
+        # Convert grid to visual text
+        grid_text = grid_to_text(grid)
         
-        # Convert flipped grid to text representation
-        grid_text = grid_to_text(grid_flipped)
-        
-        # DEBUG: Print what we're sending to LLM
-        print(f"\n=== DEBUG: What LLM Sees ===")
-        print(f"Cube grid pos: {cube_pos}")
-        print(f"Target grid pos: {target_pos}")
-        print(f"\nGrid (after flip):")
+        '''# DEBUG: Show what we're sending
+        print(f"\n=== Visual Grid for LLM ===")
         print(grid_text)
-        print(f"=== End Debug ===\n")
+        print(f"\nCube position: {cube_pos}")
+        print(f"Target position: {target_pos}")
+        print(f"=== End Visual ===\n")'''
         
-        # Create the prompt
+        # Create prompt
         prompt = self._create_prompt(grid_text, cube_pos, target_pos)
         
-        # If prompt is None (already at goal), return any action
         if prompt is None:
             return 'forward'
         
-        # DEBUG: Print full prompt
         if verbose:
             print(f"\n=== FULL PROMPT ===")
             print(prompt)
             print(f"=== END PROMPT ===\n")
         
-        # Call the LLM
+        # Call LLM
         response = self._call_llm(prompt)
         
-        # Print reasoning
+        '''# Show reasoning
         print(f"\n--- LLM Reasoning ---")
         print(response)
-        print(f"--- End Reasoning ---\n")
+        print(f"--- End Reasoning ---\n")'''
         
-        # Parse the response to extract an action
-        llm_action = self._parse_action(response)
+        # Parse action from response
+        visual_action = self._parse_action(response)
         
-        # Remap the action
-        actual_action = self._remap_action(llm_action)
+        # Map visual action to environment action
+        actual_action = self._map_visual_to_env(visual_action)
         
-        print(f"LLM said: '{llm_action}' → Remapped to: '{actual_action}'")
+        '''print(f"LLM chose: '{visual_action}' (visual) → '{actual_action}' (environment)")'''
         
-        # Remember this action and position for next time
-        self.last_action = llm_action
+        # Remember for next time
+        self.last_action = visual_action
         self.last_pos = cube_pos
         
         return actual_action
     
     def _create_prompt(self, grid_text, cube_pos, target_pos):
-        """Create the prompt with chain-of-thought reasoning"""
+        """Create a simple, visual navigation prompt"""
         
-        # Check if already at goal
         if cube_pos == target_pos:
-            # Don't even ask LLM, just stay put
-            return None  # We'll handle this in get_action
+            return None
         
-        # Build feedback about last action
+        # Build feedback if last action failed
         feedback = ""
         if self.action_failed:
-            feedback = f"\n⚠️ WARNING: Your last action '{self.last_action}' FAILED - you hit a wall!\nChoose a DIFFERENT direction.\n"
+            feedback = f"\n⚠️ Your last move '{self.last_action}' FAILED - you hit a wall!\nTry a different direction.\n"
         
-        prompt = f"""Navigate cube C to target T in a maze.
+        prompt = f"""You are navigating a maze. Look at the grid below and choose the best direction.
 
-    Grid:
-    {grid_text}
+GRID (look at this carefully):
+{grid_text}
 
-    Legend: C=you, T=goal, #=wall, .=empty
-    Current: {cube_pos} | Target: {target_pos}
-    {feedback}
-    Actions: up (move up), down (move down), left (move left), right (move right)
+LEGEND:
+- C = You (current position)
+- T = Goal (target to reach)
+- # = Wall (cannot pass through)
+- . = Empty space (can move through)
 
-    Think briefly:
-    1. Where is T relative to C?
-    2. Any walls blocking direct path?
-    3. Best direction to approach T?
+DIRECTIONS YOU CAN MOVE:
+- "up" = move toward the top of the grid
+- "down" = move toward the bottom of the grid  
+- "left" = move toward the left side of the grid
+- "right" = move toward the right side of the grid
 
-    Reasoning (1-2 sentences max):
-    [Your analysis]
+YOUR TASK:
+Navigate from C to T by choosing one direction at a time.
+{feedback}
 
-    Action (MUST be exactly one word: up, down, left, or right):"""
+THINK STEP BY STEP:
+1. Where is T relative to C in the visual grid?
+2. Are there any walls blocking the direct path?
+3. What is the best single direction to get closer to T?
+
+Your response should be:
+First, explain your thinking in 1-2 sentences.
+Then, on a new line, write ONLY ONE of these words: up, down, left, or right
+
+Your response:"""
 
         return prompt
 
     def _call_llm(self, prompt):
-        """Call the OpenAI API with the prompt"""
+        """Call the OpenAI API"""
         try:
             self.num_calls += 1
             
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an expert at solving grid mazes. You think step-by-step, then choose the best action."},
+                    {
+                        "role": "system", 
+                        "content": "You are an expert at navigating grid mazes visually. You look at the grid, identify where you are (C) and where the goal is (T), then choose the best direction."
+                    },
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.temperature,
-                max_tokens=150  # <-- CHANGED from 10 to 150 to allow reasoning
+                max_tokens=2000
             )
             
             response_text = response.choices[0].message.content.strip()
@@ -227,112 +217,114 @@ class LLMAgent:
         except Exception as e:
             print(f"Error calling LLM: {e}")
             import random
-            return random.choice(['forward', 'backward', 'left', 'right'])
+            return random.choice(['up', 'down', 'left', 'right'])
     
     def _parse_action(self, response):
-        """Extract the action from the LLM's response
+        """Extract direction from LLM's response
         
-        LLM might say "move DOWN" or "go up" - we should accept those!
+        The LLM should respond with: up, down, left, or right
+        based on what it sees in the visual grid.
         """
         response_lower = response.lower().strip()
         
-        # Map natural language to our action words
-        direction_map = {
-            'up': 'forward',
-            'down': 'backward',
-            'left': 'left',
-            'right': 'right',
-            'forward': 'forward',
-            'backward': 'backward'
-        }
+        # Valid visual directions
+        valid_directions = ['up', 'down', 'left', 'right']
         
-        # Strategy 1: Look for direction words with context
-        # Match patterns like "move UP", "go DOWN", "moving left", etc.
+        # Strategy 1: Check last line (where we asked it to put the answer)
+        lines = response_lower.split('\n')
+        if lines:
+            last_line = lines[-1].strip()
+            for direction in valid_directions:
+                if direction in last_line:
+                    return direction
+        
+        # Strategy 2: Look for direction words with common phrases
         import re
         patterns = [
-            r'(?:move|go|moving|action)[:\s]+(\w+)',  # "move DOWN"
-            r'(?:should|will|can)\s+(?:move|go)\s+(\w+)',  # "should move up"
-            r'direction[:\s]+(\w+)',  # "direction: down"
+            r'(?:move|go|choose|pick)\s+(\w+)',
+            r'direction[:\s]+(\w+)',
+            r'(?:i will|i choose|i pick)\s+(\w+)'
         ]
         
         for pattern in patterns:
             match = re.search(pattern, response_lower)
             if match:
                 word = match.group(1)
-                if word in direction_map:
-                    return direction_map[word]
+                if word in valid_directions:
+                    return word
         
-        # Strategy 2: Check last line
-        lines = response_lower.split('\n')
-        if lines:
-            last_line = lines[-1].strip()
-            for word, action in direction_map.items():
-                if word in last_line:
-                    return action
+        # Strategy 3: Just find any direction word in the response
+        for direction in valid_directions:
+            if direction in response_lower:
+                return direction
         
-        # Strategy 3: Search entire response for any direction word
-        for word, action in direction_map.items():
-            if word in response_lower:
-                return action
-        
-        print(f"Warning: Could not parse action from: '{response[:100]}...', defaulting to 'forward'")
-        return 'forward'
+        # Default: move up (safest guess)
+        print(f"Warning: Could not parse direction from '{response[:100]}...', defaulting to 'up'")
+        return 'up'
 
-    def _remap_action(self, llm_action):
-        """Remap LLM's action (natural directions) to actual physics action
+    def _map_visual_to_env(self, visual_action):
+        """Map visual direction to environment action
         
-        LLM uses: up, down, left, right (natural grid directions)
-        Physics uses: forward, backward, left, right (coordinate system)
+        COORDINATE SYSTEM:
+        - Environment uses X, Y coordinates where:
+          * X axis: forward/backward
+          * Y axis: left/right
         
-        After flipping the grid, the mapping is:
-        - LLM "up" → Physics "backward" (decrease x)
-        - LLM "down" → Physics "forward" (increase x)
-        - LLM "left" → Physics "right" (decrease y)
-        - LLM "right" → Physics "left" (increase y)
+        - Visual grid after flip shows:
+          * "up" in visual = higher rows in flipped grid = higher X in env = FORWARD
+          * "down" in visual = lower rows in flipped grid = lower X in env = BACKWARD
+          * "left" in visual = lower columns = lower Y in env = ... needs checking
+          * "right" in visual = higher columns = higher Y in env = ... needs checking
+        
+        HOWEVER, based on your note about needing to flip left/right but not up/down,
+        let me implement what you need:
         """
-        remap = {
-            'up': 'backward',
-            'down': 'forward',
-            'left': 'right',
-            'right': 'left',
-            # Also accept the old format just in case
-            'forward': 'backward',
-            'backward': 'forward'
+        # Based on your feedback: flip left/right, keep up/down as is
+        mapping = {
+            'up': 'forward',       # Keep up → forward
+            'down': 'backward',    # Keep down → backward  
+            'left': 'right',       # FLIP left → right
+            'right': 'left'        # FLIP right → left
         }
         
-        return remap.get(llm_action, 'forward')
+        return mapping.get(visual_action, 'forward')
 
-# Test code - only runs when you execute this file directly
+
+# Test code
 if __name__ == "__main__":
     print("=" * 60)
-    print("Testing LLM Agent")
+    print("Testing Fixed LLM Agent")
     print("=" * 60)
     
     # Test 1: Grid converter
-    print("\n[Test 1: Grid Converter]")
+    print("\n[Test 1: Grid to Visual Text]")
     test_grid = np.array([
         [0, 0, 1, 0, 0],
         [0, 1, 0, 0, 0],
         [2, 0, 0, 0, 3],
         [0, 0, 1, 0, 0]
     ])
+    print("Original grid array:")
+    print(test_grid)
+    print("\nVisual representation:")
     print(grid_to_text(test_grid))
     
-    # Test 2: Create LLM agent
-    print("\n[Test 2: Initialize LLM Agent]")
-    agent = LLMAgent(model="gpt-4o-mini", temperature=0.7)
+    # Test 2: Create agent
+    print("\n[Test 2: Initialize Agent]")
+    agent = LLMAgent()
     
-    # Test 3: Test action parsing
-    print("\n[Test 3: Action Parsing]")
+    # Test 3: Action parsing
+    print("\n[Test 3: Parse Directions]")
     test_responses = [
-        "forward",
-        "I think we should move forward",
-        "Forward is the best choice",
-        "Let's go backward to avoid the wall"
+        "I should move up to get closer",
+        "down",
+        "The best direction is left",
+        "right seems clear"
     ]
-    for response in test_responses:
-        action = agent._parse_action(response)
-        print(f"  Response: '{response}' → Action: '{action}'")
+    for resp in test_responses:
+        visual = agent._parse_action(resp)
+        env = agent._map_visual_to_env(visual)
+        print(f"  '{resp}' → visual='{visual}' → env='{env}'")
     
     print("\n" + "=" * 60)
-    print("✓ All tests passed!")
+    print("✓ Tests complete!")

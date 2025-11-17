@@ -7,11 +7,11 @@ from envs.grid_bullet_world import GridBulletWorld
 from envs.maze_templates import get_maze_template
 from agents.llm_agent import LLMAgent
 
-print("Debugging LLM on Corridor")
+print("Debugging LLM on u_shape")
 print("="*60)
 
 # Load corridor
-template = get_maze_template('corridor')
+template = get_maze_template('u_shape')
 
 # Create environment with GUI
 env = GridBulletWorld(gui=True, grid_size=template['grid_size'])
@@ -20,7 +20,7 @@ env.reset(maze_template=template)
 # Create LLM agent
 agent = LLMAgent()
 
-print("\nWatching LLM navigate corridor...")
+print("\nWatching LLM navigate u_shape...")
 print("Press Ctrl+C to stop\n")
 
 for step in range(50):
