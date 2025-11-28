@@ -56,6 +56,24 @@ def get_maze_template(name, grid_size=20):
             'target': (8, 6)
         },
         
+        'maze_hard_2': {
+            'description': 'maze harder',
+            'grid_size': 10,
+            'walls': [(0, 3), (0, 7), (1, 1), (1, 3), (1, 5), (1, 7), (1, 8), (2, 1), (2, 2), (2, 3), (2, 5), (2, 6), (2, 7), (2, 8), (3, 3), (4, 0), (4, 1), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 9), (5, 1), (6, 1), (6, 2), (6, 4), (6, 5), (6, 6), (6, 7), (6, 8), (6, 9), (8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8)],
+            'start': (9, 0),
+            'target': (1, 6)
+        },
+        
+        'maze_hard_3': {
+            'description': 'Hard maze with one optimal path',
+            'grid_size': 10,
+            'walls': [(0, 0), (1, 2), (2, 9),(6, 9)] + 
+            [(9, i) for i in range(5, 9)] + [(4, i) for i in range(3, 8)] + [(2, i) for i in range(8)] + 
+            [(i, 5) for i in range(6, 9)] +[(i, 1) for i in range(2, 9)] + [(i, 3) for i in range(4, 9)]+ [(i, 8) for i in range(4, 9) if i != 7],
+            'start': (1, 0),
+            'target': (8, 6)
+        },
+        
         'maze_simple': {
             'description': 'Simple maze with multiple optimal paths',
             'grid_size': 10,

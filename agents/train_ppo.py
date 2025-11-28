@@ -11,6 +11,7 @@ sys.path.insert(0, '..')
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback
 import numpy as np
+import time  # Add timer
 
 # Import your environment
 from envs.grid_bullet_world import GridBulletWorld
@@ -20,7 +21,7 @@ from agents.gym_wrapper import MazeEnvGym
 
 class CurriculumEnv(MazeEnvGym):
     """Environment that cycles through different maze templates"""
-    def __init__(self, bullet_env, maze_names=['maze_simple', 'corridor', 'u_shape']):
+    def __init__(self, bullet_env, maze_names=['maze_simple', 'corridor', 'u_shape', 'narrow_gap', 'spiral', 'maze_hard']):
         super().__init__(bullet_env)
         self.maze_names = maze_names
         self.templates = [get_maze_template(name) for name in maze_names]
@@ -43,12 +44,12 @@ def make_curriculum_env():
     bullet_env = GridBulletWorld(
         gui=False,
         grid_size=10,
-        max_steps=50,
+        max_steps=60,  # Increased for harder mazes
         dynamic_rules=[]
     )
     bullet_env.reset()
     
-    return CurriculumEnv(bullet_env, maze_names=['maze_simple', 'corridor', 'u_shape'])
+    return CurriculumEnv(bullet_env, maze_names=['maze_simple', 'corridor', 'u_shape', 'narrow_gap', 'spiral', 'maze_hard'])
 
 
 def make_env(maze_name='maze_simple'):
@@ -111,16 +112,20 @@ def train_ppo(maze_name='maze_simple', total_timesteps=200000, use_curriculum=Fa
         gamma=0.99,                   # Discount factor
         gae_lambda=0.95,              # GAE parameter
         clip_range=0.2,               # PPO clipping
-        ent_coef=0.01,                # Entropy bonus (encourages exploration)
+        ent_coef=0.05,                # INCREASED: More exploration (was 0.01)
         verbose=1,                    # Print training info
-        tensorboard_log=f"../logs/ppo_{maze_name}"
+        tensorboard_log=f"../logs/ppo_curriculum"
     )
     print(f"✓ PPO model created")
     
     # Step 3: Train!
     print(f"\nStarting training...")
+    start_time = time.time()
     model.learn(total_timesteps=total_timesteps)
+    training_time = time.time() - start_time
+    
     print(f"✓ Training complete!")
+    print(f"⏱  Training time: {training_time/60:.1f} minutes ({training_time:.0f} seconds)")
     
     # Step 4: Save model
     model_path = f"../models/ppo_{maze_name}"
@@ -141,14 +146,17 @@ def evaluate_agent(env, model, n_episodes=10):
     total_steps = []
     
     for ep in range(n_episodes):
-        obs, _ = env.reset(options={'maze_template': env._maze_template})
+        # Reset environment (curriculum env will cycle through mazes automatically)
+        obs, _ = env.reset()
         done = False
         steps = 0
         
-        while not done:
+        while not done and steps < 100:  # Add max steps safeguard
             action, _ = model.predict(obs, deterministic=True)
+            action = int(action.item()) if isinstance(action, np.ndarray) else int(action)
             obs, reward, done, truncated, info = env.step(action)
             steps += 1
+            done = done or truncated
         
         if info.get('success', False):
             successes += 1
@@ -160,11 +168,12 @@ def evaluate_agent(env, model, n_episodes=10):
 
 if __name__ == "__main__":
     # Train with curriculum learning (multiple mazes)
-    model = train_ppo(use_curriculum=True, total_timesteps=300000)
+    # Increased timesteps for harder mazes like maze_hard
+    model = train_ppo(use_curriculum=True, total_timesteps=500000)
     
     print("\n" + "="*50)
     print("Next steps:")
     print("1. Test on all maze types for generalization")
-    print("2. Try even harder mazes (spiral, maze_hard)")
+    print("2. If maze_hard still fails, try method 3 or 4")
     print("3. Add LLM guidance for strategic planning")
     print("="*50)
