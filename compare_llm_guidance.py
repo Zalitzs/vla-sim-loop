@@ -3,15 +3,13 @@ Compare LLM-Guided Agent vs Baseline
 
 Tests if LLM guidance improves success rate and efficiency
 """
-import sys
-sys.path.insert(0, '..')
-
 import pickle
 import numpy as np
 from stable_baselines3 import PPO
 from envs.grid_bullet_world import GridBulletWorld
 from agents.gym_wrapper import MazeEnvGym
-from llm_guidance import LLMGuidedAgent, simple_llm_query
+from llm_guidance import LLMGuidedAgent, simple_llm_query, real_llm_query, cached_llm_query
+from optimality_analysis import print_optimality_comparison
 
 
 def get_env_state(env):
@@ -43,7 +41,7 @@ def get_env_state(env):
     }
 
 
-def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0):
+def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0, llm_mode='simple'):
     """
     Test agent on mazes with or without LLM guidance
     
@@ -52,18 +50,29 @@ def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0):
         test_mazes: List of maze templates
         use_llm: Whether to use LLM guidance
         uncertainty_threshold: Entropy threshold for LLM queries
+        llm_mode: 'simple' (heuristic), 'real' (GPT-4o-mini), or 'cached' (GPT with caching)
     
     Returns:
         results: Dict with performance metrics
     """
     
     if use_llm:
+        # Choose LLM query function
+        if llm_mode == 'real':
+            llm_fn = real_llm_query
+            print(f"Testing WITH REAL LLM (GPT-4o-mini, threshold: {uncertainty_threshold})")
+        elif llm_mode == 'cached':
+            llm_fn = cached_llm_query
+            print(f"Testing WITH CACHED LLM (GPT-4o-mini cached, threshold: {uncertainty_threshold})")
+        else:
+            llm_fn = simple_llm_query
+            print(f"Testing WITH LLM guidance (simple heuristic, threshold: {uncertainty_threshold})")
+        
         agent = LLMGuidedAgent(
             model, 
             uncertainty_threshold=uncertainty_threshold,
-            llm_query_fn=simple_llm_query
+            llm_query_fn=llm_fn
         )
-        print(f"Testing WITH LLM guidance (uncertainty threshold: {uncertainty_threshold})")
     else:
         agent = None
         print("Testing WITHOUT LLM guidance (baseline)")
@@ -71,6 +80,7 @@ def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0):
     results = {
         'successes': 0,
         'steps': [],
+        'success_flags': [],  # NEW: Track which episodes succeeded
         'llm_queries': 0,
         'total_steps': 0
     }
@@ -83,11 +93,11 @@ def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0):
             max_steps=60,
             dynamic_rules=[]
         )
-        bullet_env.reset(maze_template=maze_template)
+        # Fixed: Reset through wrapper
         env = MazeEnvGym(bullet_env)
         
         # Run episode
-        obs, _ = env.reset()
+        obs, _ = env.reset(options={"maze_template": maze_template})
         done = False
         steps = 0
         
@@ -110,6 +120,7 @@ def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0):
         if success:
             results['successes'] += 1
         results['steps'].append(steps)
+        results['success_flags'].append(success)  # NEW: Track per-episode success
         results['total_steps'] += steps
         
         env.close()
@@ -122,13 +133,17 @@ def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0):
         llm_stats = agent.get_statistics()
         results['llm_queries'] = llm_stats['llm_queries']
         results['query_rate'] = llm_stats['query_rate']
+        results['llm_stats'] = llm_stats  # Store full stats
     
     return results
 
 
-def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold=1.0):
+def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold=1.0, llm_mode='simple'):
     """
     Run full comparison experiment
+    
+    Args:
+        llm_mode: 'simple', 'real', or 'cached'
     """
     print("="*60)
     print("LLM GUIDANCE EXPERIMENT")
@@ -136,6 +151,7 @@ def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold
     print(f"Model: {model_path}")
     print(f"Dataset: {dataset_file}")
     print(f"Uncertainty threshold: {uncertainty_threshold}")
+    print(f"LLM mode: {llm_mode}")
     print("="*60)
     
     # Load model and dataset
@@ -158,7 +174,8 @@ def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold
     print("WITH LLM GUIDANCE")
     print("─"*60)
     llm_results = test_agent(model, test_mazes, use_llm=True, 
-                            uncertainty_threshold=uncertainty_threshold)
+                            uncertainty_threshold=uncertainty_threshold,
+                            llm_mode=llm_mode)
     
     # Compare results
     print("\n" + "="*60)
@@ -182,8 +199,21 @@ def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold
     print(f"  Difference:   {llm_avg_steps - baseline_avg_steps:+.1f}")
     
     print(f"\nLLM Usage:")
-    print(f"  Total queries:  {llm_results['llm_queries']}")
-    print(f"  Query rate:     {llm_results['query_rate']*100:.1f}% of steps")
+    print(f"  Total queries:     {llm_results['llm_queries']}")
+    print(f"  Query rate:        {llm_results['query_rate']*100:.1f}% of steps")
+    
+    if 'llm_stats' in llm_results:
+        stats = llm_results['llm_stats']
+        print(f"\nLLM Query Details:")
+        print(f"  Uncertain steps:   {stats['uncertain_steps']} ({stats['uncertain_rate']*100:.1f}% of total)")
+        print(f"  Times queried:     {stats['llm_queries']}")
+        print(f"  Times followed:    {stats['llm_followed']} ({stats['follow_rate']*100:.1f}%)")
+        print(f"  Times ignored:     {stats['llm_ignored']}")
+        print(f"\nLLM Hint Distribution:")
+        for direction, count in stats['hint_distribution'].items():
+            if count > 0:
+                pct = count / stats['llm_queries'] * 100 if stats['llm_queries'] > 0 else 0
+                print(f"    {direction:10s}: {count:3d} ({pct:5.1f}%)")
     
     # Determine if LLM helped
     print("\n" + "─"*60)
@@ -195,6 +225,9 @@ def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold
         print("✗ LLM guidance did not improve performance.")
         print("  Try adjusting uncertainty threshold or improving LLM hints.")
     print("─"*60)
+    
+    # Optimality analysis (compare to A* optimal paths)
+    print_optimality_comparison(baseline_results, llm_results, test_mazes)
     
     return baseline_results, llm_results
 
@@ -209,11 +242,15 @@ if __name__ == "__main__":
                        help='Path to dataset file')
     parser.add_argument('--threshold', type=float, default=1.0,
                        help='Uncertainty threshold for LLM queries')
+    parser.add_argument('--llm-mode', type=str, default='simple',
+                       choices=['simple', 'real', 'cached'],
+                       help='LLM mode: simple (heuristic), real (GPT-4o-mini), cached (GPT with cache)')
     
     args = parser.parse_args()
     
     baseline, llm = compare_with_and_without_llm(
         args.model, 
         args.dataset,
-        uncertainty_threshold=args.threshold
+        uncertainty_threshold=args.threshold,
+        llm_mode=args.llm_mode
     )

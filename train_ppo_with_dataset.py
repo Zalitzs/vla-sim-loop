@@ -66,9 +66,8 @@ class CurriculumEnv(MazeEnvGym):
             template = self.templates[self.current_idx]
             self.current_idx = (self.current_idx + 1) % len(self.templates)
         
-        self.env.reset(maze_template=template)
-        obs = self._get_obs()
-        return obs, {}
+        # Use parent class reset to properly clear history and reset environment
+        return super().reset(seed=seed, options={'maze_template': template})
 
 
 def make_curriculum_env(use_random=True, dataset_file=None):

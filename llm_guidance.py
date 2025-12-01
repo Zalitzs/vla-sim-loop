@@ -19,21 +19,30 @@ class LLMGuidedAgent:
     Key idea: When agent is uncertain (high entropy), ask LLM for hint
     """
     
-    def __init__(self, model, uncertainty_threshold=1.0, llm_query_fn=None):
+    def __init__(self, model, uncertainty_threshold=1.0, llm_query_fn=None, 
+                 llm_boost=2.0, boost_type='multiplicative'):
         """
         Args:
             model: Trained PPO model
             uncertainty_threshold: Entropy threshold to trigger LLM query
             llm_query_fn: Function that queries LLM (we'll implement this)
+            llm_boost: How much to boost LLM-suggested action (default: 2.0x for multiplicative, 0.2 for additive)
+            boost_type: 'multiplicative' (default) or 'additive'
         """
         self.model = model
         self.uncertainty_threshold = uncertainty_threshold
         self.llm_query_fn = llm_query_fn
+        self.llm_boost = llm_boost
+        self.boost_type = boost_type
         
         # Statistics
         self.llm_queries = 0
+        self.llm_followed = 0  # Times agent followed LLM advice
+        self.llm_ignored = 0   # Times agent ignored LLM advice
         self.total_steps = 0
+        self.uncertain_steps = 0  # Steps where entropy > threshold
         self.last_llm_hint = None
+        self.hint_distribution = {'forward': 0, 'backward': 0, 'left': 0, 'right': 0}
         
     def predict(self, obs, env_state=None):
         """
@@ -63,19 +72,45 @@ class LLMGuidedAgent:
         
         # Check if uncertain
         if entropy > self.uncertainty_threshold:
+            self.uncertain_steps += 1
+            
             # Agent is uncertain! Ask LLM for guidance
             if self.llm_query_fn and env_state:
                 llm_hint = self.llm_query_fn(env_state)
                 self.last_llm_hint = llm_hint
                 self.llm_queries += 1
                 
+                # Track hint distribution
+                if llm_hint in self.hint_distribution:
+                    self.hint_distribution[llm_hint] += 1
+                
+                # Get original best action
+                original_action = torch.argmax(action_probs).item()
+                
                 # Modify action based on LLM hint
                 action = self._apply_llm_hint(action_probs, llm_hint)
+                
+                # Track if we followed LLM
+                if action == self._hint_to_action(llm_hint):
+                    self.llm_followed += 1
+                else:
+                    self.llm_ignored += 1
+                
                 return action, True
         
         # Normal prediction (agent is confident)
         action = torch.argmax(action_probs).item()
         return action, False
+    
+    def _hint_to_action(self, hint):
+        """Convert hint string to action index"""
+        action_map = {
+            'forward': 0,
+            'backward': 1,
+            'left': 2,
+            'right': 3
+        }
+        return action_map.get(hint, None)
     
     def _apply_llm_hint(self, action_probs, llm_hint):
         """
@@ -96,8 +131,16 @@ class LLMGuidedAgent:
         if suggested_action is not None:
             # Boost LLM suggested action
             modified_probs = action_probs.clone()
-            modified_probs[suggested_action] *= 2.0  # Double the probability
-            modified_probs = modified_probs / modified_probs.sum()  # Normalize
+            
+            if self.boost_type == 'additive':
+                # Additive boost: add fixed amount
+                modified_probs[suggested_action] += self.llm_boost
+            else:  # multiplicative (default)
+                # Multiplicative boost: multiply by factor
+                modified_probs[suggested_action] *= self.llm_boost
+            
+            # Normalize to ensure probabilities sum to 1
+            modified_probs = modified_probs / modified_probs.sum()
             
             # Sample from modified distribution
             action = torch.multinomial(modified_probs, 1).item()
@@ -107,12 +150,21 @@ class LLMGuidedAgent:
             return torch.argmax(action_probs).item()
     
     def get_statistics(self):
-        """Return statistics about LLM usage"""
+        """Return detailed statistics about LLM usage"""
         query_rate = self.llm_queries / self.total_steps if self.total_steps > 0 else 0
+        uncertain_rate = self.uncertain_steps / self.total_steps if self.total_steps > 0 else 0
+        follow_rate = self.llm_followed / self.llm_queries if self.llm_queries > 0 else 0
+        
         return {
             'total_steps': self.total_steps,
+            'uncertain_steps': self.uncertain_steps,
+            'uncertain_rate': uncertain_rate,
             'llm_queries': self.llm_queries,
             'query_rate': query_rate,
+            'llm_followed': self.llm_followed,
+            'llm_ignored': self.llm_ignored,
+            'follow_rate': follow_rate,
+            'hint_distribution': self.hint_distribution,
             'last_hint': self.last_llm_hint
         }
 
@@ -169,13 +221,132 @@ def simple_llm_query(env_state):
 
 def real_llm_query(env_state):
     """
-    Real LLM query using Claude API
+    Real LLM query using OpenAI API (GPT-4o-mini)
     
-    This will call Claude to get strategic navigation advice
+    Args:
+        env_state: Dict with 'agent_pos', 'target_pos', 'walls'
+    
+    Returns:
+        hint: 'forward', 'backward', 'left', 'right'
     """
-    # TODO: Implement actual Claude API call
-    # For now, use simple heuristic
-    return simple_llm_query(env_state)
+    import os
+    
+    # Try to load from .env file if exists
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()  # Load from .env in root directory
+    except ImportError:
+        pass  # dotenv not installed, will use environment variable
+    
+    # Get API key
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        print("Warning: OPENAI_API_KEY not found, using simple heuristic")
+        return simple_llm_query(env_state)
+    
+    try:
+        from openai import OpenAI
+        
+        # Set up OpenAI client
+        client = OpenAI(api_key=api_key)
+        
+        # Extract state
+        agent_pos = env_state['agent_pos']
+        target_pos = env_state['target_pos']
+        walls = env_state['walls']
+        
+        # Calculate relative direction in natural terms
+        dx = target_pos[0] - agent_pos[0]  # positive = need to go right
+        dy = target_pos[1] - agent_pos[1]  # positive = need to go up
+        
+        # Convert walls to natural directions for LLM
+        # Internal mapping: forward=x+1(right), backward=x-1(left), right=y+1(up), left=y-1(down)
+        natural_walls = {
+            'up': walls['right'],      # y+1
+            'down': walls['left'],      # y-1
+            'right': walls['forward'],  # x+1
+            'left': walls['backward']   # x-1
+        }
+        
+        # Create simple, natural prompt
+        prompt = f"""You are helping a robot navigate a maze on a grid.
+
+CURRENT SITUATION:
+- Robot is at position: row {agent_pos[0]}, column {agent_pos[1]}
+- Goal is at position: row {target_pos[0]}, column {target_pos[1]}
+
+To reach the goal, the robot needs to:
+- Move {'RIGHT' if dx > 0 else 'LEFT' if dx < 0 else 'neither horizontally'}: {abs(dx)} steps
+- Move {'UP' if dy > 0 else 'DOWN' if dy < 0 else 'neither vertically'}: {abs(dy)} steps
+
+WALLS (blocked directions):
+  * UP: {'❌ BLOCKED' if natural_walls['up'] else '✓ OPEN'}
+  * DOWN: {'❌ BLOCKED' if natural_walls['down'] else '✓ OPEN'}
+  * LEFT: {'❌ BLOCKED' if natural_walls['left'] else '✓ OPEN'}
+  * RIGHT: {'❌ BLOCKED' if natural_walls['right'] else '✓ OPEN'}
+
+The robot is uncertain which direction to move. Which direction should it go?
+
+Respond with EXACTLY ONE WORD: up, down, left, or right
+"""
+        
+        # Call GPT-4o-mini
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a maze navigation expert. You must respond with exactly one word: up, down, left, or right. Choose the direction that avoids walls and moves toward the goal."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=5,
+            temperature=0.1
+        )
+        
+        # Extract hint (LLM gives natural directions: up/down/left/right)
+        hint_natural = response.choices[0].message.content.strip().lower()
+        
+        # Map natural directions to internal actions
+        # Natural: up/down/left/right (what LLM says)
+        # Internal: forward/backward/left/right (what agent uses)
+        # Mapping: up→right(y+1), down→left(y-1), right→forward(x+1), left→backward(x-1)
+        natural_to_internal = {
+            'up': 'right',       # y+1
+            'down': 'left',      # y-1  
+            'right': 'forward',  # x+1
+            'left': 'backward'   # x-1
+        }
+        
+        hint_internal = natural_to_internal.get(hint_natural, None)
+        
+        # Validate hint
+        if hint_internal:
+            return hint_internal
+        else:
+            # LLM gave invalid response, fallback to heuristic
+            print(f"Warning: LLM gave invalid hint '{hint_natural}', using heuristic")
+            return simple_llm_query(env_state)
+    
+    except Exception as e:
+        print(f"Error querying LLM: {e}")
+        return simple_llm_query(env_state)
+
+
+def cached_llm_query(env_state, cache={}):
+    """
+    Cached version to avoid repeated API calls for same situation
+    
+    This saves money by caching LLM responses
+    """
+    # Create cache key from state
+    key = (
+        env_state['agent_pos'],
+        env_state['target_pos'],
+        tuple(sorted(env_state['walls'].items()))
+    )
+    
+    if key not in cache:
+        cache[key] = real_llm_query(env_state)
+    
+    return cache[key]
 
 
 if __name__ == "__main__":

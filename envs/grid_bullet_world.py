@@ -31,14 +31,14 @@ class GridBulletWorld(BulletWorld):
         
         self.step_count = 0
         
+        # Connect to PyBullet if needed
+        if self._client is None:
+            self.connect()
+        
+        # Reset step count
+        self._step_count = 0
+        
         if maze_template is not None:
-            # Connect to PyBullet if needed
-            if self._client is None:
-                self.connect()
-            
-            # DON'T call super().reset() - set positions directly
-            self._step_count = 0
-            
             # Use template
             self.grid = maze_template['grid'].copy()
             
