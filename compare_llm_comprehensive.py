@@ -43,7 +43,8 @@ def get_env_state(env):
     }
 
 
-def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0, llm_mode='simple'):
+def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0, 
+               llm_mode='simple', llm_boost=2.0, boost_type='multiplicative'):
     """
     Test agent on mazes with detailed tracking
     
@@ -66,7 +67,9 @@ def test_agent(model, test_mazes, use_llm=False, uncertainty_threshold=1.0, llm_
         agent = LLMGuidedAgent(
             model, 
             uncertainty_threshold=uncertainty_threshold,
-            llm_query_fn=llm_fn
+            llm_query_fn=llm_fn,
+            llm_boost=llm_boost,
+            boost_type=boost_type
         )
     else:
         agent = None
@@ -576,7 +579,8 @@ def print_comprehensive_results(baseline_results, llm_results, test_mazes, categ
     }
 
 
-def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold=1.0, llm_mode='simple'):
+def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold=1.0, 
+                                llm_mode='simple', llm_boost=2.0, boost_type='multiplicative'):
     """Main comparison function"""
     
     print("="*70)
@@ -609,7 +613,9 @@ def compare_with_and_without_llm(model_path, dataset_file, uncertainty_threshold
     print("─"*70)
     llm_results = test_agent(model, test_mazes, use_llm=True, 
                             uncertainty_threshold=uncertainty_threshold,
-                            llm_mode=llm_mode)
+                            llm_mode=llm_mode,
+                            llm_boost=llm_boost,
+                            boost_type=boost_type)
     
     # Analyze maze categories
     categories = analyze_maze_categories(baseline_results, llm_results, test_mazes)
@@ -697,6 +703,11 @@ if __name__ == "__main__":
     parser.add_argument('--llm-mode', type=str, default='simple',
                        choices=['simple', 'real', 'cached'],
                        help='LLM mode: simple (heuristic), real (GPT-4o-mini), cached (GPT with cache)')
+    parser.add_argument('--boost', type=float, default=2.0,
+                       help='Boost strength (e.g., 2.0 for multiplicative, 0.2 for additive)')
+    parser.add_argument('--boost-type', type=str, default='multiplicative',
+                       choices=['multiplicative', 'additive'],
+                       help='Boost type: multiplicative or additive')
     
     args = parser.parse_args()
     
@@ -704,5 +715,7 @@ if __name__ == "__main__":
         args.model, 
         args.dataset,
         uncertainty_threshold=args.threshold,
-        llm_mode=args.llm_mode
+        llm_mode=args.llm_mode,
+        llm_boost=args.boost,
+        boost_type=args.boost_type
     )
