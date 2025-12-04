@@ -4,6 +4,9 @@ Per-Maze Trajectory Visualizer
 Visualizes the actual path an agent took through a specific maze
 Use this AFTER running comprehensive comparison to inspect interesting mazes
 """
+import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'  # Fix OpenMP conflict on Windows
+
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
