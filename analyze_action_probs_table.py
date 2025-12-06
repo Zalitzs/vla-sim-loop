@@ -239,6 +239,61 @@ def create_table_visualization(maze_idx, maze, records, output_file):
     plt.close()
     
     print(f"  [OK] Saved table visualization: {output_file}")
+    
+    # Also save JSON data
+    json_file = output_file.replace('.png', '.json')
+    json_data = {
+        'maze_idx': int(maze_idx + 1),
+        'maze_info': {
+            'wall_density': float(maze['wall_density']),
+            'optimal_path': int(maze['path_length']),
+            'total_queries': int(len(records))
+        },
+        'queries': []
+    }
+    
+    action_map = {0: 'Forward', 1: 'Backward', 2: 'Left', 3: 'Right'}
+    
+    for idx, record in enumerate(records):
+        # Convert position to list of ints
+        position = record['position']
+        if hasattr(position, '__iter__'):
+            position_list = [int(p) for p in position]
+        else:
+            position_list = [int(position)]
+        
+        query_data = {
+            'query_num': int(idx + 1),
+            'position': position_list,
+            'entropy': float(record['entropy']),
+            'probabilities': {
+                'forward': float(record['probs'][0]),
+                'backward': float(record['probs'][1]),
+                'left': float(record['probs'][2]),
+                'right': float(record['probs'][3])
+            },
+            'llm_suggestion': str(record['llm_hint']),
+            'action_taken': str(action_map[int(record['action_taken'])]),
+            'followed': bool(action_map[int(record['action_taken'])].lower() == str(record['llm_hint']).lower())
+        }
+        json_data['queries'].append(query_data)
+    
+    # Calculate summary statistics
+    follow_count = sum(1 for q in json_data['queries'] if q['followed'])
+    json_data['summary'] = {
+        'total_queries': int(len(records)),
+        'follow_count': int(follow_count),
+        'follow_rate': float(follow_count / len(records) if records else 0),
+        'avg_entropy': float(np.mean([r['entropy'] for r in records])),
+        'min_entropy': float(np.min([r['entropy'] for r in records])),
+        'max_entropy': float(np.max([r['entropy'] for r in records]))
+    }
+    
+    import json
+    with open(json_file, 'w') as f:
+        json.dump(json_data, f, indent=2)
+    
+    print(f"  [OK] Saved JSON data: {json_file}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,800 @@
+{
+  "maze_idx": 35,
+  "maze_info": {
+    "wall_density": 0.19,
+    "optimal_path": 18,
+    "total_queries": 46
+  },
+  "queries": [
+    {
+      "query_num": 1,
+      "position": [
+        0,
+        0
+      ],
+      "entropy": 1.2565250396728516,
+      "probabilities": {
+        "forward": 0.3586311638355255,
+        "backward": 0.12835098803043365,
+        "left": 0.12324158102273941,
+        "right": 0.38977622985839844
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 2,
+      "position": [
+        0,
+        0
+      ],
+      "entropy": 1.2497498989105225,
+      "probabilities": {
+        "forward": 0.48124849796295166,
+        "backward": 0.13656973838806152,
+        "left": 0.15558944642543793,
+        "right": 0.2265923023223877
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 3,
+      "position": [
+        1,
+        0
+      ],
+      "entropy": 1.2666090726852417,
+      "probabilities": {
+        "forward": 0.36095455288887024,
+        "backward": 0.11275297403335571,
+        "left": 0.375907301902771,
+        "right": 0.15038521587848663
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 4,
+      "position": [
+        1,
+        1
+      ],
+      "entropy": 0.853969931602478,
+      "probabilities": {
+        "forward": 0.7388972043991089,
+        "backward": 0.0614803284406662,
+        "left": 0.11034434288740158,
+        "right": 0.08927816152572632
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Forward",
+      "followed": false
+    },
+    {
+      "query_num": 5,
+      "position": [
+        2,
+        1
+      ],
+      "entropy": 0.9112148880958557,
+      "probabilities": {
+        "forward": 0.27114611864089966,
+        "backward": 0.05508558079600334,
+        "left": 0.6408060193061829,
+        "right": 0.03296221047639847
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 6,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 1.216286301612854,
+      "probabilities": {
+        "forward": 0.17652550339698792,
+        "backward": 0.17545603215694427,
+        "left": 0.1291559338569641,
+        "right": 0.5188625454902649
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 7,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0498515367507935,
+      "probabilities": {
+        "forward": 0.559880793094635,
+        "backward": 0.04717579111456871,
+        "left": 0.30082303285598755,
+        "right": 0.09212030470371246
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 8,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0833120346069336,
+      "probabilities": {
+        "forward": 0.40994182229042053,
+        "backward": 0.078215092420578,
+        "left": 0.456362783908844,
+        "right": 0.05548032000660896
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 9,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.907724142074585,
+      "probabilities": {
+        "forward": 0.02155108004808426,
+        "backward": 0.6051920652389526,
+        "left": 0.053419191390275955,
+        "right": 0.3198377192020416
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 10,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.2269566059112549,
+      "probabilities": {
+        "forward": 0.2997514009475708,
+        "backward": 0.2140832394361496,
+        "left": 0.06182004138827324,
+        "right": 0.4243452847003937
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Forward",
+      "followed": false
+    },
+    {
+      "query_num": 11,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.9923144578933716,
+      "probabilities": {
+        "forward": 0.04109350964426994,
+        "backward": 0.5268815159797668,
+        "left": 0.053068749606609344,
+        "right": 0.37895622849464417
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 12,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 0.9113955497741699,
+      "probabilities": {
+        "forward": 0.5920735597610474,
+        "backward": 0.02843237854540348,
+        "left": 0.3374377191066742,
+        "right": 0.04205642268061638
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 13,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0498515367507935,
+      "probabilities": {
+        "forward": 0.559880793094635,
+        "backward": 0.04717579111456871,
+        "left": 0.30082303285598755,
+        "right": 0.09212030470371246
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 14,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0833120346069336,
+      "probabilities": {
+        "forward": 0.40994182229042053,
+        "backward": 0.078215092420578,
+        "left": 0.456362783908844,
+        "right": 0.05548032000660896
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 15,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.907724142074585,
+      "probabilities": {
+        "forward": 0.02155108004808426,
+        "backward": 0.6051920652389526,
+        "left": 0.053419191390275955,
+        "right": 0.3198377192020416
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 16,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0192793607711792,
+      "probabilities": {
+        "forward": 0.5124014019966125,
+        "backward": 0.04721032455563545,
+        "left": 0.3825033903121948,
+        "right": 0.05788489058613777
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 17,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 0.9882726073265076,
+      "probabilities": {
+        "forward": 0.43558818101882935,
+        "backward": 0.03949178382754326,
+        "left": 0.47701579332351685,
+        "right": 0.04790430888533592
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 18,
+      "position": [
+        3,
+        0
+      ],
+      "entropy": 1.0548615455627441,
+      "probabilities": {
+        "forward": 0.029649263247847557,
+        "backward": 0.43340131640434265,
+        "left": 0.09742220491170883,
+        "right": 0.4395272433757782
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 19,
+      "position": [
+        3,
+        0
+      ],
+      "entropy": 1.197797417640686,
+      "probabilities": {
+        "forward": 0.08855456858873367,
+        "backward": 0.5143340826034546,
+        "left": 0.2115170806646347,
+        "right": 0.18559429049491882
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Right",
+      "followed": true
+    },
+    {
+      "query_num": 20,
+      "position": [
+        3,
+        0
+      ],
+      "entropy": 1.0762540102005005,
+      "probabilities": {
+        "forward": 0.10091458261013031,
+        "backward": 0.20764777064323425,
+        "left": 0.6035811901092529,
+        "right": 0.08785650879144669
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 21,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 1.1014842987060547,
+      "probabilities": {
+        "forward": 0.06758051365613937,
+        "backward": 0.5453038215637207,
+        "left": 0.10016372799873352,
+        "right": 0.2869518995285034
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 22,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.3166544437408447,
+      "probabilities": {
+        "forward": 0.3101353645324707,
+        "backward": 0.2547806203365326,
+        "left": 0.10736453533172607,
+        "right": 0.3277195394039154
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 23,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.2047827243804932,
+      "probabilities": {
+        "forward": 0.45799240469932556,
+        "backward": 0.1363837867975235,
+        "left": 0.08589401096105576,
+        "right": 0.31972986459732056
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Forward",
+      "followed": false
+    },
+    {
+      "query_num": 24,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 1.0205217599868774,
+      "probabilities": {
+        "forward": 0.05385744199156761,
+        "backward": 0.41359034180641174,
+        "left": 0.0485222190618515,
+        "right": 0.48403000831604004
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 25,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.171288013458252,
+      "probabilities": {
+        "forward": 0.30098140239715576,
+        "backward": 0.13690905272960663,
+        "left": 0.07133132964372635,
+        "right": 0.49077826738357544
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Forward",
+      "followed": false
+    },
+    {
+      "query_num": 26,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0498515367507935,
+      "probabilities": {
+        "forward": 0.559880793094635,
+        "backward": 0.04717579111456871,
+        "left": 0.30082303285598755,
+        "right": 0.09212030470371246
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 27,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.8681366443634033,
+      "probabilities": {
+        "forward": 0.012584132142364979,
+        "backward": 0.5083644390106201,
+        "left": 0.03165271878242493,
+        "right": 0.44739866256713867
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 28,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.0192793607711792,
+      "probabilities": {
+        "forward": 0.5124014019966125,
+        "backward": 0.04721032455563545,
+        "left": 0.3825033903121948,
+        "right": 0.05788489058613777
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 29,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.8326427936553955,
+      "probabilities": {
+        "forward": 0.01809932477772236,
+        "backward": 0.6619036197662354,
+        "left": 0.04089020937681198,
+        "right": 0.27910688519477844
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 30,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.1825404167175293,
+      "probabilities": {
+        "forward": 0.3289144039154053,
+        "backward": 0.1280759871006012,
+        "left": 0.07719079405069351,
+        "right": 0.4658188819885254
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Forward",
+      "followed": false
+    },
+    {
+      "query_num": 31,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.8885459899902344,
+      "probabilities": {
+        "forward": 0.023208826780319214,
+        "backward": 0.41278696060180664,
+        "left": 0.02853965386748314,
+        "right": 0.5354645252227783
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 32,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.1833860874176025,
+      "probabilities": {
+        "forward": 0.3750409781932831,
+        "backward": 0.14317956566810608,
+        "left": 0.062265027314424515,
+        "right": 0.4195144772529602
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 33,
+      "position": [
+        2,
+        1
+      ],
+      "entropy": 0.9974707961082458,
+      "probabilities": {
+        "forward": 0.45811304450035095,
+        "backward": 0.06215802952647209,
+        "left": 0.4487660825252533,
+        "right": 0.030962763354182243
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 34,
+      "position": [
+        4,
+        1
+      ],
+      "entropy": 0.9731974601745605,
+      "probabilities": {
+        "forward": 0.07551531493663788,
+        "backward": 0.6775511503219604,
+        "left": 0.10711421817541122,
+        "right": 0.13981930911540985
+      },
+      "llm_suggestion": "backward",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 35,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 1.1493431329727173,
+      "probabilities": {
+        "forward": 0.3895610570907593,
+        "backward": 0.07150544971227646,
+        "left": 0.4377235770225525,
+        "right": 0.10120997577905655
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 36,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 0.8261425495147705,
+      "probabilities": {
+        "forward": 0.016232766211032867,
+        "backward": 0.609119176864624,
+        "left": 0.024113450199365616,
+        "right": 0.3505346477031708
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 37,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.3288389444351196,
+      "probabilities": {
+        "forward": 0.3384043872356415,
+        "backward": 0.25027942657470703,
+        "left": 0.1220187395811081,
+        "right": 0.2892974615097046
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Left",
+      "followed": true
+    },
+    {
+      "query_num": 38,
+      "position": [
+        2,
+        2
+      ],
+      "entropy": 1.2855554819107056,
+      "probabilities": {
+        "forward": 0.4480096995830536,
+        "backward": 0.15556266903877258,
+        "left": 0.16615457832813263,
+        "right": 0.23027303814888
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Forward",
+      "followed": false
+    },
+    {
+      "query_num": 39,
+      "position": [
+        3,
+        2
+      ],
+      "entropy": 1.0205217599868774,
+      "probabilities": {
+        "forward": 0.05385744199156761,
+        "backward": 0.41359034180641174,
+        "left": 0.0485222190618515,
+        "right": 0.48403000831604004
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 40,
+      "position": [
+        3,
+        1
+      ],
+      "entropy": 0.9440799951553345,
+      "probabilities": {
+        "forward": 0.5311867594718933,
+        "backward": 0.025903692469000816,
+        "left": 0.3945630192756653,
+        "right": 0.04834653064608574
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 41,
+      "position": [
+        2,
+        1
+      ],
+      "entropy": 1.031696081161499,
+      "probabilities": {
+        "forward": 0.5013608932495117,
+        "backward": 0.08497793227434158,
+        "left": 0.3823551535606384,
+        "right": 0.031305938959121704
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 42,
+      "position": [
+        1,
+        1
+      ],
+      "entropy": 0.9669268131256104,
+      "probabilities": {
+        "forward": 0.08570423722267151,
+        "backward": 0.2485230416059494,
+        "left": 0.035821396857500076,
+        "right": 0.6299512982368469
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 43,
+      "position": [
+        1,
+        0
+      ],
+      "entropy": 1.2583383321762085,
+      "probabilities": {
+        "forward": 0.09995260089635849,
+        "backward": 0.4296870827674866,
+        "left": 0.2954428493976593,
+        "right": 0.17491745948791504
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Right",
+      "followed": true
+    },
+    {
+      "query_num": 44,
+      "position": [
+        1,
+        0
+      ],
+      "entropy": 1.1062700748443604,
+      "probabilities": {
+        "forward": 0.10257865488529205,
+        "backward": 0.27484697103500366,
+        "left": 0.5507256984710693,
+        "right": 0.07184869050979614
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Right",
+      "followed": true
+    },
+    {
+      "query_num": 45,
+      "position": [
+        1,
+        0
+      ],
+      "entropy": 0.9958394169807434,
+      "probabilities": {
+        "forward": 0.0967438817024231,
+        "backward": 0.17982816696166992,
+        "left": 0.6547033190727234,
+        "right": 0.06872466206550598
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Left",
+      "followed": false
+    },
+    {
+      "query_num": 46,
+      "position": [
+        1,
+        1
+      ],
+      "entropy": 0.935905933380127,
+      "probabilities": {
+        "forward": 0.6921977400779724,
+        "backward": 0.062283746898174286,
+        "left": 0.15115457773208618,
+        "right": 0.09436404705047607
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    }
+  ],
+  "summary": {
+    "total_queries": 46,
+    "follow_count": 11,
+    "follow_rate": 0.2391304347826087,
+    "avg_entropy": 1.0644022226333618,
+    "min_entropy": 0.8261425495147705,
+    "max_entropy": 1.3288389444351196
+  }
+}

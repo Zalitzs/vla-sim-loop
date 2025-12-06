@@ -1,0 +1,120 @@
+{
+  "maze_idx": 19,
+  "maze_info": {
+    "wall_density": 0.25,
+    "optimal_path": 18,
+    "total_queries": 6
+  },
+  "queries": [
+    {
+      "query_num": 1,
+      "position": [
+        0,
+        0
+      ],
+      "entropy": 1.2565250396728516,
+      "probabilities": {
+        "forward": 0.3586311638355255,
+        "backward": 0.12835098803043365,
+        "left": 0.12324158102273941,
+        "right": 0.38977622985839844
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 2,
+      "position": [
+        1,
+        0
+      ],
+      "entropy": 1.3608512878417969,
+      "probabilities": {
+        "forward": 0.3389686942100525,
+        "backward": 0.22713418304920197,
+        "left": 0.18229593336582184,
+        "right": 0.2516011893749237
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 3,
+      "position": [
+        2,
+        0
+      ],
+      "entropy": 1.165448546409607,
+      "probabilities": {
+        "forward": 0.5252770185470581,
+        "backward": 0.08639874309301376,
+        "left": 0.257136732339859,
+        "right": 0.13118748366832733
+      },
+      "llm_suggestion": "forward",
+      "action_taken": "Forward",
+      "followed": true
+    },
+    {
+      "query_num": 4,
+      "position": [
+        4,
+        4
+      ],
+      "entropy": 1.2905749082565308,
+      "probabilities": {
+        "forward": 0.12237227708101273,
+        "backward": 0.42548081278800964,
+        "left": 0.20292438566684723,
+        "right": 0.24922248721122742
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Right",
+      "followed": false
+    },
+    {
+      "query_num": 5,
+      "position": [
+        3,
+        5
+      ],
+      "entropy": 1.0568361282348633,
+      "probabilities": {
+        "forward": 0.04587787762284279,
+        "backward": 0.3445602059364319,
+        "left": 0.08519239723682404,
+        "right": 0.524369478225708
+      },
+      "llm_suggestion": "left",
+      "action_taken": "Backward",
+      "followed": false
+    },
+    {
+      "query_num": 6,
+      "position": [
+        2,
+        7
+      ],
+      "entropy": 1.0490801334381104,
+      "probabilities": {
+        "forward": 0.16114607453346252,
+        "backward": 0.02572275884449482,
+        "left": 0.5740177631378174,
+        "right": 0.2391134351491928
+      },
+      "llm_suggestion": "right",
+      "action_taken": "Right",
+      "followed": true
+    }
+  ],
+  "summary": {
+    "total_queries": 6,
+    "follow_count": 4,
+    "follow_rate": 0.6666666666666666,
+    "avg_entropy": 1.1965527534484863,
+    "min_entropy": 1.0490801334381104,
+    "max_entropy": 1.3608512878417969
+  }
+}
